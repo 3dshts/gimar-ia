@@ -25,9 +25,9 @@ class DashboardPage extends StatelessWidget {
   /// Datos de todas las tarjetas disponibles en el dashboard.
   static const List<Map<String, String>> _allCardData = [
     {
-      'id': 'gestion_nominas',
-      'title': 'GESTOR NÓMINAS',
-      'icon': 'gestor_nominas.svg',
+      'id': 'alertas_produccion',
+      'title': 'ALERTAS PRODUCCIÓN',
+      'icon': 'alertas_produccion.svg',
     },
   ];
 

@@ -152,7 +152,7 @@ class DioClient {
     }
   }
 
-  /// Sube un archivo Excel de prototipo como binario.
+  /// Sube un archivo Excel de prototipo a Google Drive.
   static Future<Response> uploadPrototypeExcel({
     required PlatformFile file,
     required String marca,
@@ -160,26 +160,25 @@ class DioClient {
   }) async {
     try {
       ApiLogger.uploadStart(file.name, ApiEndpoints.uploadPrototypeExcel);
-  
+
       // Validar que sea Excel
       FileUploadHelper.validateExtensions(
         [file],
         ['xlsx', 'xls', 'xlsm'],
       );
-  
+
       final formData = await FileUploadHelper.createFormDataSingleFile(
         file: file,
         fieldName: 'file',
         additionalFields: {'marca': marca},
       );
-  
-      // Hacer POST con los bytes
+
       final response = await _dio.post(
         ApiEndpoints.uploadPrototypeExcel,
         data: formData,
         onSendProgress: onSendProgress,
       );
-  
+
       ApiLogger.uploadSuccess(file.name, response.statusCode ?? 0);
       return response;
     } catch (e) {
@@ -187,7 +186,6 @@ class DioClient {
       rethrow;
     }
   }
-
 
   /// Sube un archivo PDF de pedido a Google Drive.
   static Future<Response> uploadPedidoPdf({

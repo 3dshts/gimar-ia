@@ -2,10 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
-import 'package:frontend/src/features/buzon/pages/buzon_page.dart';
-import 'package:frontend/src/features/gestion_nominas/pages/gestion_nominas_page.dart';
-
+import 'package:frontend/src/features/alertas_produccion/pages/alertas_produccion_page.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/common_widgets/helpers/responsive_helper.dart';
 import '../../../core/network/api_logger.dart';
@@ -19,7 +16,7 @@ import '../../../core/network/api_logger.dart';
 // import '../../gestion_nominas/pages/gestion_nominas_page.dart';
 // import '../../intrastat/pages/intrastat_page.dart';
 // import '../../inventario/pages/inventario_page.dart';
-
+//import '../../parte_situacion/pages/parte_situacion_page.dart';
 
 /// Tarjeta interactiva del dashboard con navegación a diferentes módulos.
 /// 
@@ -54,8 +51,7 @@ class _DashboardCardState extends State<DashboardCard> {
 
   /// Mapa de rutas: asocia cada ID con su página correspondiente.
   static final Map<String, Widget Function()> _routes = {
-    'buzon': () => const BuzonPage(),
-    'gestion_nominas': () => const GestionNominasPage(),
+    'alertas_produccion': () => const AlertasProduccionPage(),
   };
 
   /// Maneja la navegación según el ID de la tarjeta.
