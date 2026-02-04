@@ -18,7 +18,7 @@ class _ResponsiveDimensions {
 
 /// Textos de la interfaz.
 class _UITexts {
-  static const String companyName = 'SUSY-SHOES SL';
+  static const String companyName = 'GIMAR';
   static const String title = 'DATASHEET';
   static const String logoSemanticLabel = 'IntegrIA for Business';
 }

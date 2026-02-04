@@ -111,7 +111,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
   Widget _buildDesktopLayout(String username, String fullName) {
     return Stack(
       children: [
-        // Título centrado (SUSY-SHOES SL)
+        // Título centrado (GIMAR)
         Center(child: _buildCompanyNameDesktop()),
 
         // Contenido principal
@@ -265,7 +265,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
         ).push(MaterialPageRoute(builder: (_) => const DashboardPage()));
       },
       child: const Text(
-        'SUSY-SHOES SL',
+        'GIMAR',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: AppColors.lightText,
@@ -298,7 +298,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ),
           const SizedBox(width: AppSpacing.small),
           Text(
-            'SUSY-SHOES SL',
+            'GIMAR',
             style: TextStyle(
               color: AppColors.lightText,
               fontSize: isMobile

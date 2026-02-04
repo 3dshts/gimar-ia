@@ -123,7 +123,7 @@ class _LoginFormState extends State<LoginForm> {
                 style: AppTextStyles.brandTitle(isMobile),
               ),
               Text(
-                'SUSY-SHOES SL',
+                'GIMAR',
                 style: AppTextStyles.brandSubtitle(isMobile),
               ),
               const SizedBox(height: AppSpacing.large),

@@ -208,7 +208,7 @@ class AnimationDurations {
 /// Rutas de assets de imágenes y SVG.
 class AppAssets {
   // Imágenes generales
-  static const String brandingBanner = 'assets/images/susy-shoes-banner.jpeg';
+  static const String brandingBanner = 'assets/images/gimar-banner.jpg';
   static const String logoAppBar = 'assets/images/logo_app_bar.svg';
 
   // Iconos del dashboard
