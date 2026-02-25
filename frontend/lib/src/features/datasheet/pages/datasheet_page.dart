@@ -18,7 +18,7 @@ class _ResponsiveDimensions {
 
 /// Textos de la interfaz.
 class _UITexts {
-  static const String companyName = 'GIMAR';
+  static const String companyName = 'AHUMADOS GIMAR SLU';
   static const String title = 'DATASHEET';
   static const String logoSemanticLabel = 'IntegrIA for Business';
 }
@@ -33,8 +33,10 @@ class _SectionConfig {
   static const double cardElevationBlur = 8.0;
   static const double cardElevationOpacity = 0.05;
   static const double iconSize = 6.0;
-  static const double integrationIconSize = 36.0;
-  static const double integrationTextSize = 12.0;
+  // static const double integrationIconSize = 36.0;
+  // static const double integrationTextSize = 12.0;
+  static const double integrationIconSize = 108.0;
+  static const double integrationTextSize = 36.0;
   static const double lineHeight = 1.4;
 }
 
@@ -45,7 +47,7 @@ class _CustomFontSizes {
 
 /// Información de la versión actual.
 class _VersionInfo {
-  static const String version = 'Versión 1.0.0 - Agosto 2025';
+  static const String version = 'Versión 1.0.0 - Enero 2026';
   static final List<String> features = [
     'Actualización del panel de administración',
     'Mejoras visuales en componentes responsivos',
@@ -99,7 +101,7 @@ class _AIInfo {
 
 /// Información de licencia.
 class _LicenseInfo {
-  static const String number = 'integria-susyshoes-08-2025';
+  static const String number = 'integria-gimar-01-2026';
   static const int maxUsers = 30;
 
   static List<String> get details => [

@@ -1,19 +1,22 @@
-// backend/src/application/use-cases/get_notas_produccion.usecase.js
+// src/application/use_cases/get_notas_produccion.usecase.js
 // -----------------------------------------------------------------------------
-// Caso de uso: Obtener notas de producción desde el ERP externo (Apifox).
-// Valida parámetros, construye el payload y obtiene los registros con una sola petición.
+// Caso de uso: Obtener notas de producción desde el ERP externo.
+// Valida parámetros, construye el payload y obtiene los registros.
+// Recibe el repositorio y la configuración por inyección de dependencias.
 // -----------------------------------------------------------------------------
-
-import { ExternalAPIRepository } from '../../infrastructure/database/repositories/external_API.repository.js';
 
 export class GetNotasProduccionUseCase {
-  constructor() {
-    // Crear instancia del repositorio correctamente
-    this.externalAPIRepo = new ExternalAPIRepository();
-    this.baseUrl = 'https://susyshoes.infortic.es:8888';
-    this.apiPath = '/api/GesticERP_dat_dat/v2/_process/apifox';
-    this.bearerToken = 'ZG5NBZG9AKAM8HEUXQSI3W9DQ9N8PV5R';
-    this.maxLimit = 10000; // Límite máximo de registros en una sola petición
+  /**
+   * @param {Object} deps - Dependencias inyectadas desde el contenedor.
+   * @param {Object} deps.externalApiRepository - Repositorio para llamadas HTTP externas.
+   * @param {Object} deps.erpConfig - Configuración del ERP (baseUrl, apiPath, bearerToken, maxLimit).
+   */
+  constructor({ externalApiRepository, erpConfig }) {
+    this.externalApiRepository = externalApiRepository;
+    this.baseUrl = erpConfig.baseUrl;
+    this.apiPath = erpConfig.apiPath;
+    this.bearerToken = erpConfig.bearerToken;
+    this.maxLimit = erpConfig.maxLimit;
   }
 
   /**
@@ -36,14 +39,7 @@ export class GetNotasProduccionUseCase {
     // 3. Obtener registros con una sola petición
     try {
       const records = await this._fetchRecords(payload);
-      
-      // 4. Deduplicar registros
-      // const uniqueRecords = this._deduplicateRecords(records);
-      
-      // if (uniqueRecords.length < records.length) {
-      //   console.log(`⚠️ Se encontraron ${records.length - uniqueRecords.length} registros duplicados`);
-      // }
-      
+
       return {
         success: true,
         data: records,
@@ -70,7 +66,7 @@ export class GetNotasProduccionUseCase {
 
     console.log(`📊 Consultando registros con límite de ${this.maxLimit}...`);
 
-    const response = await this.externalAPIRepo.post(
+    const response = await this.externalApiRepository.post(
       `${this.baseUrl}${this.apiPath}`,
       {
         body: payload,
@@ -84,34 +80,11 @@ export class GetNotasProduccionUseCase {
 
     // Extraer datos de la respuesta
     const records = response.data && Array.isArray(response.data) ? response.data : [];
-    
+
     console.log(`✅ Se obtuvieron ${records.length} registros de la API externa`);
     console.log(`📊 Total disponible en la API: ${response.total_count || 0}`);
-    
-    return records;
-  }
 
-  /**
-   * Elimina registros duplicados basándose en una clave única.
-   * @param {Array} records Array de registros
-   * @returns {Array} Array sin duplicados
-   * @private
-   */
-  _deduplicateRecords(records) {
-    const seen = new Map();
-    
-    return records.filter(record => {
-      // Crear una clave única combinando nota y partida (sin agrupación)
-      const key = `${record.nota}-${record.partida}`;
-      
-      if (seen.has(key)) {
-        console.log(`⚠️ Registro duplicado encontrado: ${key}`);
-        return false;
-      }
-      
-      seen.set(key, true);
-      return true;
-    });
+    return records;
   }
 
   /**
@@ -137,7 +110,7 @@ export class GetNotasProduccionUseCase {
       errors.push('fechaHasta debe tener formato YYYY-MM-DD');
     }
 
-    // Validar que fechaDesde <= fechaHasta
+    // Validar que fechaDesde no sea posterior a fechaHasta
     if (params.fechaDesde && params.fechaHasta) {
       const desde = new Date(params.fechaDesde);
       const hasta = new Date(params.fechaHasta);
@@ -160,7 +133,7 @@ export class GetNotasProduccionUseCase {
       errors.push('temporada debe ser un número entero positivo');
     }
 
-    // Si hay errores, lanzar excepción
+    // Si hay errores, lanzar excepción con todos los mensajes
     if (errors.length > 0) {
       throw new Error(`Errores de validación: ${errors.join(', ')}`);
     }
@@ -169,7 +142,7 @@ export class GetNotasProduccionUseCase {
   /**
    * Construye el payload para la API externa.
    * @param {Object} params Parámetros validados
-   * @returns {Object} Payload formateado
+   * @returns {Object} Payload formateado para el ERP
    * @private
    */
   _buildPayload(params) {
@@ -182,7 +155,7 @@ export class GetNotasProduccionUseCase {
   }
 
   /**
-   * Valida si una fecha tiene formato YYYY-MM-DD y es válida.
+   * Valida si una fecha tiene formato YYYY-MM-DD y es una fecha real.
    * @param {string} dateString Fecha a validar
    * @returns {boolean} true si es válida
    * @private
@@ -195,7 +168,7 @@ export class GetNotasProduccionUseCase {
 
     const date = new Date(dateString);
     const timestamp = date.getTime();
-    
+
     if (typeof timestamp !== 'number' || Number.isNaN(timestamp)) {
       return false;
     }

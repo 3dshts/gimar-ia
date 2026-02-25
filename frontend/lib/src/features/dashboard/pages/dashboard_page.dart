@@ -29,6 +29,11 @@ class DashboardPage extends StatelessWidget {
       'title': 'ALERTAS PRODUCCIÓN',
       'icon': 'alertas_produccion.svg',
     },
+    {
+      'id': 'buzon',
+      'title': 'BUZÓN',
+      'icon': 'buzon.svg',
+    },
   ];
 
   /// Construye la lista de tarjetas según los permisos del usuario.

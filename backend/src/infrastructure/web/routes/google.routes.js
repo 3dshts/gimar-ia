@@ -1,137 +1,75 @@
-// backend/src/infrastructure/web/routes/google.routes.js
-import { Router } from "express";
-import {
-  uploadImgAlert,
-  checkFolder,
-  createFolderStructure,
-  uploadPrototypeExcel,
-  uploadPedidoPdf,
-  uploadIntrastatPDF,
-  uploadNominasExcels,
-  uploadInventarioPDF,
-  uploadSituacionSW,
-  uploadSituacionVersace
-} from "../controllers/google.controller.js";
-import multer from "multer";
+// src/infrastructure/web/routes/google.routes.js
+// -----------------------------------------------------------------------------
+// Definición de rutas de Google Drive.
+// Patrón factory: recibe el controlador ya instanciado desde el contenedor.
+// La configuración de multer se importa desde el middleware centralizado.
+// -----------------------------------------------------------------------------
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB por archivo
-    files: 50, // máximo 20 archivos
-  },
-});
-const router = Router();
+import { Router } from 'express';
+import upload from '../middlewares/multer.middleware.js';
 
 /**
- * POST /checkFolder
- * Verifica la existencia de una carpeta en Drive.
+ * Crea y devuelve el router de Google Drive.
+ * @param {Object} deps - Dependencias inyectadas.
+ * @param {Object} deps.googleController - Instancia del controlador de Google.
+ * @returns {Router} Router de Express configurado.
  */
-router.post("/checkFolder", checkFolder);
+export function createGoogleRoutes({ googleController }) {
+  const router = Router();
 
-/**
- * POST /uploadImgAlert
- * Sube una imagen a Google Drive (carpeta de alertas).
- * - Convierte el archivo a PNG.
- * - Crea la carpeta del día si no existe.
- * - Requiere form-data con campo `file`.
- */
-router.post(
-  "/uploadImgAlert",
-  (req, res, next) => {
-    // Middleware de debug para inspeccionar cabeceras
-    console.log("---- /uploadImgAlert DEBUG ----");
-    console.log("Content-Type:", req.headers["content-type"]);
-    next();
-  },
-  upload.single("file"),
-  (req, res, next) => {
-    // Middleware de debug para inspeccionar archivo y body
-    console.log(
-      "MULTER file:",
-      !!req.file,
-      req.file?.originalname,
-      req.file?.mimetype,
-      req.file?.size
-    );
-    console.log("MULTER body keys:", Object.keys(req.body || {}));
-    next();
-  },
-  uploadImgAlert
-);
+  // POST /checkFolder → Verificar existencia de carpeta/archivo en Drive
+  router.post('/checkFolder', (req, res, next) => googleController.checkFolder(req, res, next));
 
-// ------------------------------
-// POST /uploadPrototypeExcel
-// ------------------------------
-// 🔹 Recibe un Excel y la marca en el body
-// form-data: { file: <excel>, marca: "STUART WEITZMAN" }
-router.post(
-  "/uploadPrototypeExcel",
-  upload.single("file"),
-  uploadPrototypeExcel
-);
+  // POST /uploadImgAlert → Subir imagen de alerta (1 archivo)
+  router.post('/uploadImgAlert', upload.single('file'), (req, res, next) => googleController.uploadImgAlert(req, res, next));
 
-router.post("/uploadPedidoPDF", upload.single("file"), uploadPedidoPdf);
+  // POST /uploadPrototypeExcel → Subir Excel de prototipo con extracción de imágenes (1 archivo + marca)
+  router.post('/uploadPrototypeExcel', upload.single('file'), (req, res, next) => googleController.uploadPrototypeExcel(req, res, next));
 
-router.post(
-  "/uploadIntrastatPDF",
-  upload.array("files", 20),
-  uploadIntrastatPDF
-);
+  // POST /uploadPedidoPDF → Subir PDF de pedido Versace (1 archivo)
+  router.post('/uploadPedidoPDF', upload.single('file'), (req, res, next) => googleController.uploadPedidoPdf(req, res, next));
 
-router.post(
-  "/uploadInventarioPDF",
-  upload.array("files", 50),
-  uploadInventarioPDF
-);
+  // POST /uploadIntrastatPDF → Subir múltiples PDFs de Intrastat (hasta 20 archivos + marca)
+  router.post('/uploadIntrastatPDF', upload.array('files', 20), (req, res, next) => googleController.uploadIntrastatPDF(req, res, next));
 
-router.post(
-  '/uploadNominasExcels',
-  upload.fields([
-    { name: 'archivoResumen', maxCount: 1 },
-    { name: 'archivosDetalle1', maxCount: 20 },
-    { name: 'archivosDetalle2', maxCount: 20 }
-  ]),
-  uploadNominasExcels
-);
+  // POST /uploadInventarioPDF → Subir múltiples PDFs de inventario (hasta 50 archivos)
+  router.post('/uploadInventarioPDF', upload.array('files', 50), (req, res, next) => googleController.uploadInventarioPDF(req, res, next));
 
+  // POST /uploadNominasExcels → Subir Excels de nóminas (resumen + detalles + retenciones)
+  router.post(
+    '/uploadNominasExcels',
+    upload.fields([
+      { name: 'archivoResumen', maxCount: 1 },
+      { name: 'archivosDetalle1', maxCount: 20 },
+      { name: 'archivosDetalle2', maxCount: 20 },
+    ]),
+    (req, res, next) => googleController.uploadNominasExcels(req, res, next),
+  );
 
-// ------------------------------
-// POST /uploadSituacionVersace
-// ------------------------------
-// 🔹 Recibe 4 archivos: 1 PDF (informeFechas) y 3 Excel (dirma, informePasado, informeNuevo)
-// form-data: { informeFechas: <pdf>, dirma: <excel>, informePasado: <excel>, informeNuevo: <excel> }
-router.post(
-  '/uploadSituacionVersace',
-  upload.fields([
-    { name: 'informeFechas', maxCount: 1 },
-    { name: 'dirma', maxCount: 1 },
-    { name: 'informePasado', maxCount: 1 },
-    { name: 'informeNuevo', maxCount: 1 }
-  ]),
-  uploadSituacionVersace
-);
+  // POST /uploadSituacionVersace → Subir 4 archivos de situación pedidos Versace
+  router.post(
+    '/uploadSituacionVersace',
+    upload.fields([
+      { name: 'informeFechas', maxCount: 1 },
+      { name: 'dirma', maxCount: 1 },
+      { name: 'informePasado', maxCount: 1 },
+      { name: 'informeNuevo', maxCount: 1 },
+    ]),
+    (req, res, next) => googleController.uploadSituacionVersace(req, res, next),
+  );
 
-// ------------------------------
-// POST /uploadSituacionSW
-// ------------------------------
-// 🔹 Recibe múltiples PDFs (erpSusy) y 1 Excel (planningCliente)
-// form-data: { erpSusy: [<pdf1>, <pdf2>, ...], planningCliente: <excel> }
-router.post(
-  '/uploadSituacionSW',
-  upload.fields([
-    { name: 'erpSusy', maxCount: 20 },
-    { name: 'planningCliente', maxCount: 1 }
-  ]),
-  uploadSituacionSW
-);
+  // POST /uploadSituacionSW → Subir PDFs de ERP + Excel de planning SW
+  router.post(
+    '/uploadSituacionSW',
+    upload.fields([
+      { name: 'erpSusy', maxCount: 20 },
+      { name: 'planningCliente', maxCount: 1 },
+    ]),
+    (req, res, next) => googleController.uploadSituacionSW(req, res, next),
+  );
 
-/**
- * POST /createFolderStructure
- * Crea recursivamente una estructura de carpetas en Drive
- * a partir de un objeto `structure` enviado en el body.
- */
-router.post("/createFolderStructure", createFolderStructure);
+  // POST /createFolderStructure → Crear estructura recursiva de carpetas
+  router.post('/createFolderStructure', (req, res, next) => googleController.createFolderStructure(req, res, next));
 
-
-export default router;
+  return router;
+}

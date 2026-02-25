@@ -1,23 +1,33 @@
-// backend/src/infrastructure/database/repositories/drive.repository.js
+// src/infrastructure/database/google/drive.repository.js
 // -----------------------------------------------------------------------------
-// Repositorio para operaciones con Google Drive.
-// Encapsula toda la lógica de infraestructura de Google Drive API.
+// Repositorio de Google Drive.
+// Encapsula toda la comunicación con la API de Drive: búsqueda, creación de
+// carpetas, subida de archivos y gestión de permisos.
+// Recibe sus dependencias por inyección desde el contenedor.
 // -----------------------------------------------------------------------------
-
-import { getDrive, bufferToStream } from '../../web/middlewares/google.middleware.js';
-import ids from '../../../config/drive-ids.json' with { type: "json" };
 
 export class DriveRepository {
-  constructor() {
-    this.drive = getDrive();
-    this.driveIds = ids;
+  /**
+   * @param {Object} deps - Dependencias inyectadas desde el contenedor.
+   * @param {Object} deps.drive - Cliente autenticado de Google Drive API.
+   * @param {Object} deps.driveIds - Mapa de IDs de carpetas (drive-ids.json).
+   * @param {Function} deps.bufferToStream - Convierte un Buffer en ReadableStream.
+   */
+  constructor({ drive, driveIds, bufferToStream }) {
+    this.drive = drive;
+    this.driveIds = driveIds;
+    this.bufferToStream = bufferToStream;
   }
+
+  // ==========================================================================
+  // OPERACIONES CON CARPETAS
+  // ==========================================================================
 
   /**
    * Busca una carpeta por nombre dentro de un directorio padre.
-   * @param {string} folderName Nombre de la carpeta a buscar
-   * @param {string} parentId ID del directorio padre
-   * @returns {Promise<string|null>} ID de la carpeta encontrada o null
+   * @param {string} folderName - Nombre exacto de la carpeta.
+   * @param {string} parentId - ID de la carpeta padre.
+   * @returns {Promise<string|null>} ID de la carpeta o null si no existe.
    */
   async findFolderByName(folderName, parentId) {
     const search = await this.drive.files.list({
@@ -32,21 +42,19 @@ export class DriveRepository {
   }
 
   /**
-   * Crea una carpeta en Drive bajo un ID padre.
-   * @param {string} name Nombre de la carpeta
-   * @param {string} parentId ID de la carpeta padre
-   * @returns {Promise<string>} ID de la carpeta creada
+   * Crea una carpeta dentro de otra carpeta padre.
+   * @param {string} name - Nombre de la nueva carpeta.
+   * @param {string} parentId - ID de la carpeta padre.
+   * @returns {Promise<string>} ID de la carpeta creada.
    */
   async createFolder(name, parentId) {
-    const fileMetadata = {
-      name,
-      mimeType: "application/vnd.google-apps.folder",
-      parents: [parentId],
-    };
-
     const file = await this.drive.files.create({
-      resource: fileMetadata,
-      fields: "id, name",
+      resource: {
+        name,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentId],
+      },
+      fields: 'id, name',
       supportsAllDrives: true,
     });
 
@@ -54,245 +62,98 @@ export class DriveRepository {
   }
 
   /**
-   * Sube un archivo a Google Drive y lo hace público.
+   * Crea recursivamente un árbol de carpetas a partir de una estructura JSON.
+   * @param {Object} folder - Nodo con { name: string, children?: Array }.
+   * @param {string} parentId - ID de la carpeta padre raíz.
+   * @returns {Promise<string>} ID de la carpeta creada en el nivel actual.
+   */
+  async createRecursiveFolders(folder, parentId) {
+    const newFolderId = await this.createFolder(folder.name, parentId);
+
+    if (folder.children && folder.children.length > 0) {
+      for (const child of folder.children) {
+        await this.createRecursiveFolders(child, newFolderId);
+      }
+    }
+
+    return newFolderId;
+  }
+
+  // ==========================================================================
+  // OPERACIONES CON ARCHIVOS
+  // ==========================================================================
+
+  /**
+   * Sube un archivo a Drive, le asigna permisos públicos de lectura y
+   * devuelve los metadatos actualizados (con links de descarga y vista).
    * @param {Object} params
-   * @param {string} params.name Nombre del archivo
-   * @param {string} params.parentId ID de la carpeta padre
-   * @param {string} params.mimeType Tipo MIME del archivo
-   * @param {Buffer} params.buffer Buffer del archivo
-   * @returns {Promise<Object>} Metadatos del archivo subido, incluyendo webContentLink y webViewLink
+   * @param {string} params.name - Nombre del archivo.
+   * @param {string} params.parentId - ID de la carpeta destino.
+   * @param {string} params.mimeType - Tipo MIME del archivo.
+   * @param {Buffer} params.buffer - Contenido del archivo.
+   * @returns {Promise<Object>} Metadatos: { id, name, mimeType, webContentLink, webViewLink }.
    */
   async uploadFile({ name, parentId, mimeType, buffer }) {
-    // Subir el archivo y pedir los links en la respuesta
     const response = await this.drive.files.create({
       resource: { name, parents: [parentId] },
-      media: { mimeType, body: bufferToStream(buffer) },
-      fields: "id, name, mimeType, webContentLink, webViewLink",
+      media: { mimeType, body: this.bufferToStream(buffer) },
+      fields: 'id, name, mimeType, webContentLink, webViewLink',
       supportsAllDrives: true,
     });
-  
+
     const fileData = response.data;
-  
-    // Configurar permisos públicos
+
+    // Hacer el archivo público para lectura
     await this.drive.permissions.create({
       fileId: fileData.id,
-      resource: {
-        role: 'reader',
-        type: 'anyone',
-      },
+      resource: { role: 'reader', type: 'anyone' },
       supportsAllDrives: true,
     });
-  
-    // Volver a obtener los links actualizados
+
+    // Re-obtener metadatos con los links ya disponibles
     const updatedFile = await this.drive.files.get({
       fileId: fileData.id,
-      fields: "id, name, mimeType, webContentLink, webViewLink",
+      fields: 'id, name, mimeType, webContentLink, webViewLink',
       supportsAllDrives: true,
     });
-  
+
     return updatedFile.data;
   }
 
   /**
-   * Configura permisos de lectura pública para un archivo.
-   * @param {string} fileId ID del archivo
+   * Asigna permisos de lectura pública (anyone) a un archivo existente.
+   * @param {string} fileId - ID del archivo en Drive.
    * @returns {Promise<void>}
    */
   async setPublicReadPermissions(fileId) {
     await this.drive.permissions.create({
       fileId,
-      resource: {
-        role: 'reader',
-        type: 'anyone',
-      },
+      resource: { role: 'reader', type: 'anyone' },
       supportsAllDrives: true,
     });
   }
 
   /**
-   * Obtiene metadatos de un archivo o carpeta por su ID.
-   * @param {string} fileId ID del archivo o carpeta
-   * @returns {Promise<Object>} Metadatos del archivo/carpeta
+   * Obtiene los metadatos de un archivo o carpeta por su ID.
+   * @param {string} fileId - ID del recurso en Drive.
+   * @returns {Promise<Object>} Metadatos: { id, name, mimeType, parents, driveId, shortcutDetails }.
    */
   async getFileMetadata(fileId) {
     const response = await this.drive.files.get({
       fileId,
-      fields: "id, name, mimeType, parents, driveId, shortcutDetails",
+      fields: 'id, name, mimeType, parents, driveId, shortcutDetails',
     });
     return response.data;
   }
 
-
-  /**
-   * Obtiene el ID de la carpeta de imágenes de alertas.
-   * @returns {string} ID de la carpeta
-   */
-  getImagesAlertsFolderId() {
-    if (!this.driveIds || !this.driveIds.imgs_alertas) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.imgs_alertas;
-  }
-
-    /**
-   * Obtiene el ID de la carpeta de prototipos de Stuart Weitzman.
-   * @returns {string} ID de la carpeta
-   */
-  getSWPrototipeFolderId() {
-    if (!this.driveIds || !this.driveIds.imgs_alertas) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.sw_prototipos;
-  }
-
-    /**
-   * Obtiene el ID de la carpeta de prototipos de Versace.
-   * @returns {string} ID de la carpeta
-   */
-  getVersacePrototipeFolderId() {
-    if (!this.driveIds || !this.driveIds.imgs_alertas) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.versace_prototipos;
-  }
-
-  
-    /**
-   * Obtiene el ID de la carpeta de pedidos de Stuart Weitzman.
-   * @returns {string} ID de la carpeta
-   */
-  getSWPedidosFolderId() {
-    if (!this.driveIds || !this.driveIds.sw_pedidos) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.sw_pedidos;
-  }
-
-    /**
-   * Obtiene el ID de la carpeta de pedidos de Versace.
-   * @returns {string} ID de la carpeta
-   */
-  getVersacePedidosFolderId() {
-    if (!this.driveIds || !this.driveIds.versace_pedidos) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.versace_pedidos;
-  }
-
-   /**
-   * Obtiene el ID de la carpeta de ventas de Intrastat.
-   * @returns {string} ID de la carpeta
-   */
-  getIntrastatVentasFolderId() {
-    if (!this.driveIds || !this.driveIds.intrastat_ventas) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.intrastat_ventas;
-  }
-
-   /**
-   * Obtiene el ID de la carpeta de compras de Intrastat.
-   * @returns {string} ID de la carpeta
-   */
-  getIntrastatComprasFolderId() {
-    if (!this.driveIds || !this.driveIds.intrastat_compras) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.intrastat_compras;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Asesorias.
-   * @returns {string} ID de la carpeta
-   */
-  getNominasAsesoriasFolderID() {
-    if (!this.driveIds || !this.driveIds.nominas_asesorias) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.nominas_asesorias;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Nominas.
-   * @returns {string} ID de la carpeta
-   */
-  getNominasNominasFolderID() {
-    if (!this.driveIds || !this.driveIds.nominas_nominas) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.nominas_nominas;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Inventario.
-   * @returns {string} ID de la carpeta
-   */
-  getInventarioFolderID() {
-    if (!this.driveIds || !this.driveIds.inventario) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.inventario;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Inventario.
-   * @returns {string} ID de la carpeta
-   */
-  getSituacionPedidosPDF() {
-    if (!this.driveIds || !this.driveIds.situacion_pedidos_pdf) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.situacion_pedidos_pdf;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Inventario.
-   * @returns {string} ID de la carpeta
-   */
-  getSituacionPedidosDirma() {
-    if (!this.driveIds || !this.driveIds.situacion_pedidos_dirma) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.situacion_pedidos_dirma;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Inventario.
-   * @returns {string} ID de la carpeta
-   */
-  getSituacionPedidosVersace() {
-    if (!this.driveIds || !this.driveIds.situacion_pedidos_versace) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.situacion_pedidos_versace;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Inventario.
-   * @returns {string} ID de la carpeta
-   */
-  getSituacionPedidosERP() {
-    if (!this.driveIds || !this.driveIds.situacion_pedidos_erp) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.situacion_pedidos_erp;
-  }
-
-  /**
-   * Obtiene el ID de la carpeta de Inventario.
-   * @returns {string} ID de la carpeta
-   */
-  getSituacionPedidosSW() {
-    if (!this.driveIds || !this.driveIds.situacion_pedidos_sw) {
-      throw new Error("Falta DRIVE_ID en la configuración");
-    }
-    return this.driveIds.situacion_pedidos_sw;
-  }
-
+  // ==========================================================================
+  // GENERADORES DE NOMBRES DE CARPETA
+  // ==========================================================================
 
   /**
    * Genera el nombre de carpeta del día actual en formato DD-MM-YYYY (zona Madrid).
-   * @returns {string} Nombre de la carpeta del día
+   * Ejemplo: "03-02-2026"
+   * @returns {string}
    */
   generateDayFolderName() {
     return new Intl.DateTimeFormat('es-ES', {
@@ -300,42 +161,125 @@ export class DriveRepository {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    }).format(new Date()).replace(/\//g, '-');
+    })
+      .format(new Date())
+      .replace(/\//g, '-');
   }
 
   /**
-   * Genera el nombre de la carpeta basado en el nombre del Excel
-   * @param {string} originalname Nombre original del archivo
-   * @returns {string} Nombre de la carpeta
+   * Genera un nombre de carpeta limpio a partir de un texto (nombre de archivo, año, mes, etc.).
+   * Elimina extensión, caracteres especiales y reemplaza espacios por guiones bajos.
+   * Ejemplo: "Informe Q1 (2025).xlsx" → "Informe_Q1_2025"
+   * @param {string} originalname - Texto original.
+   * @returns {string} Nombre sanitizado.
    */
   generateFolderName(originalname) {
-    // Remover la extensión del archivo
-    const nameWithoutExtension = originalname.replace(/\.[^/.]+$/, "");
-    
-    // Limpiar caracteres especiales y espacios
-    const cleanName = nameWithoutExtension
-      .replace(/[^a-zA-Z0-9\s\-_]/g, '') // Remover caracteres especiales
-      .replace(/\s+/g, '_') // Reemplazar espacios con guiones bajos
+    return originalname
+      .replace(/\.[^/.]+$/, '')             // Eliminar extensión
+      .replace(/[^a-zA-Z0-9\s\-_]/g, '')   // Eliminar caracteres especiales
+      .replace(/\s+/g, '_')                 // Espacios → guiones bajos
       .trim();
-
-    return cleanName;
   }
 
+  // ==========================================================================
+  // ACCESO A IDS DE CARPETAS DE DRIVE (drive-ids.json)
+  // ==========================================================================
+
   /**
-   * Crea recursivamente una estructura de carpetas a partir de un árbol.
-   * @param {Object} folder Nodo raíz con nombre y opcionales children
-   * @param {string} parentId ID de la carpeta padre donde colgará la estructura
-   * @returns {Promise<string>} ID de la carpeta creada en este nivel
+   * Obtiene un ID de carpeta del mapa de configuración.
+   * Centraliza la validación para evitar repetir la misma lógica en cada getter.
+   * @param {string} key - Clave en el objeto driveIds.
+   * @param {string} label - Nombre descriptivo para el mensaje de error.
+   * @returns {string} ID de la carpeta.
+   * @throws {Error} Si la clave no existe en la configuración.
+   * @private
    */
-  async createRecursiveFolders(folder, parentId) {
-    const newFolderId = await this.createFolder(folder.name, parentId);
-    
-    if (folder.children && folder.children.length > 0) {
-      for (const child of folder.children) {
-        await this.createRecursiveFolders(child, newFolderId);
-      }
+  _getFolderId(key, label) {
+    if (!this.driveIds?.[key]) {
+      throw new Error(`Falta ID de carpeta "${label}" (key: ${key}) en drive-ids.json`);
     }
-    
-    return newFolderId;
+    return this.driveIds[key];
+  }
+
+  // --- Alertas ---
+  /** @returns {string} ID de la carpeta de imágenes de alertas. */
+  getImagesAlertsFolderId() {
+    return this._getFolderId('imgs_alertas', 'Imágenes de alertas');
+  }
+
+  // --- Prototipos ---
+  /** @returns {string} ID de la carpeta de prototipos Stuart Weitzman. */
+  getSWPrototipeFolderId() {
+    return this._getFolderId('sw_prototipos', 'Prototipos SW');
+  }
+
+  /** @returns {string} ID de la carpeta de prototipos Versace. */
+  getVersacePrototipeFolderId() {
+    return this._getFolderId('versace_prototipos', 'Prototipos Versace');
+  }
+
+  // --- Pedidos ---
+  /** @returns {string} ID de la carpeta de pedidos Stuart Weitzman. */
+  getSWPedidosFolderId() {
+    return this._getFolderId('sw_pedidos', 'Pedidos SW');
+  }
+
+  /** @returns {string} ID de la carpeta de pedidos Versace. */
+  getVersacePedidosFolderId() {
+    return this._getFolderId('versace_pedidos', 'Pedidos Versace');
+  }
+
+  // --- Intrastat ---
+  /** @returns {string} ID de la carpeta de ventas Intrastat. */
+  getIntrastatVentasFolderId() {
+    return this._getFolderId('intrastat_ventas', 'Intrastat ventas');
+  }
+
+  /** @returns {string} ID de la carpeta de compras Intrastat. */
+  getIntrastatComprasFolderId() {
+    return this._getFolderId('intrastat_compras', 'Intrastat compras');
+  }
+
+  // --- Nóminas ---
+  /** @returns {string} ID de la carpeta de nóminas — asesorías. */
+  getNominasAsesoriasFolderID() {
+    return this._getFolderId('nominas_asesorias', 'Nóminas asesorías');
+  }
+
+  /** @returns {string} ID de la carpeta de nóminas — nóminas. */
+  getNominasNominasFolderID() {
+    return this._getFolderId('nominas_nominas', 'Nóminas nóminas');
+  }
+
+  // --- Inventario ---
+  /** @returns {string} ID de la carpeta de inventario. */
+  getInventarioFolderID() {
+    return this._getFolderId('inventario', 'Inventario');
+  }
+
+  // --- Situación de Pedidos ---
+  /** @returns {string} ID de la carpeta de informes PDF de situación de pedidos. */
+  getSituacionPedidosPDF() {
+    return this._getFolderId('situacion_pedidos_pdf', 'Situación pedidos PDF');
+  }
+
+  /** @returns {string} ID de la carpeta DIRMA de situación de pedidos. */
+  getSituacionPedidosDirma() {
+    return this._getFolderId('situacion_pedidos_dirma', 'Situación pedidos DIRMA');
+  }
+
+  /** @returns {string} ID de la carpeta Versace de situación de pedidos. */
+  getSituacionPedidosVersace() {
+    return this._getFolderId('situacion_pedidos_versace', 'Situación pedidos Versace');
+  }
+
+  /** @returns {string} ID de la carpeta ERP de situación de pedidos. */
+  getSituacionPedidosERP() {
+    return this._getFolderId('situacion_pedidos_erp', 'Situación pedidos ERP');
+  }
+
+  /** @returns {string} ID de la carpeta SW de situación de pedidos. */
+  getSituacionPedidosSW() {
+    return this._getFolderId('situacion_pedidos_sw', 'Situación pedidos SW');
   }
 }

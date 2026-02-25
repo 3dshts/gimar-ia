@@ -1,4 +1,4 @@
-// backend/src/infrastructure/repositories/externalApi.repository.js
+// backend/src/infrastructure/repositories/external_api.repository.js
 // -----------------------------------------------------------------------------
 // Repositorio para operaciones con APIs externas.
 // Encapsula toda la lógica de comunicación HTTP con servicios externos.

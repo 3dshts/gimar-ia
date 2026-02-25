@@ -1,13 +1,25 @@
-// backend/src/infrastructure/web/routes/external_API.routes.js
-import { Router } from 'express';
-import { getNotasProduccion } from '../controllers/external_API.controller.js';
+// src/infrastructure/web/routes/external_api.routes.js
+// -----------------------------------------------------------------------------
+// Definición de rutas para APIs externas.
+// Patrón factory: recibe el controlador ya instanciado desde el contenedor.
+// -----------------------------------------------------------------------------
 
-const router = Router();
+import { Router } from 'express';
 
 /**
- * POST /notas_produccion
- * Obtiene las notas de producción desde el ERP externo.
+ * Crea y devuelve el router de APIs externas.
+ * @param {Object} deps - Dependencias inyectadas.
+ * @param {Object} deps.externalApiController - Instancia del controlador.
+ * @returns {Router} Router de Express configurado.
  */
-router.post('/notas_produccion', getNotasProduccion);
+export function createExternalApiRoutes({ externalApiController }) {
+  const router = Router();
 
-export default router;
+  // POST /notas_produccion → Obtener notas de producción del ERP externo
+  router.post(
+    '/notas_produccion',
+    (req, res, next) => externalApiController.getNotasProduccion(req, res, next),
+  );
+
+  return router;
+}

@@ -1,9 +1,9 @@
-// backend/src/server.js
+// backend/src/scripts/server.js
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './config/database.js';
-import mainRoutes from './infrastructure/web/routes/mainRoutes.js';
+import mainRoutes from './infrastructure/web/routes/main.routes.js';
 
 
 // Carga las variables de entorno desde el archivo .env.

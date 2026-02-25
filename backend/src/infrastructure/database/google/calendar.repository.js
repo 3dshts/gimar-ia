@@ -5,14 +5,11 @@
 // -----------------------------------------------------------------------------
 
 import { getCalendar } from "../../web/middlewares/google.middleware.js";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 export class CalendarRepository {
-  constructor() {
-    this.calendar = getCalendar();
-    this.calendarId = process.env.GOOGLE_CALENDAR_ID || "primary";
+  constructor({ calendar, calendarId }) {
+    this.calendar = calendar;
+    this.calendarId = calendarId;
   }
 
   /**

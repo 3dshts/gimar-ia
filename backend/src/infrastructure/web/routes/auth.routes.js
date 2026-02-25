@@ -1,21 +1,32 @@
-// backend/src/infrastructure/web/routes/auth.routes.js
+// src/infrastructure/web/routes/auth.routes.js
+// -----------------------------------------------------------------------------
+// Definición de rutas de autenticación.
+// Patrón factory: recibe el controlador ya instanciado desde el contenedor.
+// Las rutas solo definen endpoints y conectan middlewares con controladores.
+// No importan dependencias directamente ni contienen lógica.
+// -----------------------------------------------------------------------------
+
 import { Router } from 'express';
-import { login, validateToken } from '../controllers/auth.controller.js';
-import { authMiddleware } from '../middlewares/auth.middleware.js'; 
-
-const router = Router();
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 /**
- * POST /login
- * Ruta pública para iniciar sesión y obtener un JWT.
+ * Crea y devuelve el router de autenticación.
+ * @param {Object} deps - Dependencias inyectadas.
+ * @param {Object} deps.authController - Instancia del controlador de auth.
+ * @returns {Router} Router de Express configurado.
  */
-router.post('/login', login);
+export function createAuthRoutes({ authController }) {
+  const router = Router();
 
-/**
- * GET /validate-token
- * Ruta protegida para validar el JWT y obtener info del usuario.
- * Requiere middleware de autenticación.
- */
-router.get('/validate-token', authMiddleware, validateToken);
+  // POST /login → Autenticación con username y password
+  router.post('/login', (req, res, next) => authController.login(req, res, next));
 
-export default router;
+  // GET /validate-token → Validar JWT y obtener datos del usuario
+  router.get(
+    '/validate-token',
+    authMiddleware,
+    (req, res, next) => authController.validateToken(req, res, next),
+  );
+
+  return router;
+}

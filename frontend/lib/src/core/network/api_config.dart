@@ -7,7 +7,7 @@ class ApiConfig {
   /// Entorno actual de la aplicación.
   /// 
   /// Cambia este valor para alternar entre desarrollo y producción.
-  static const Environment currentEnvironment = Environment.prod;
+  static const Environment currentEnvironment = Environment.dev;
 
   /// URL base según el entorno configurado.
   static String get baseUrl {

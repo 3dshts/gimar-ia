@@ -265,7 +265,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
         ).push(MaterialPageRoute(builder: (_) => const DashboardPage()));
       },
       child: const Text(
-        'GIMAR',
+        'AHUMADOS GIMAR SLU',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: AppColors.lightText,
@@ -298,7 +298,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ),
           const SizedBox(width: AppSpacing.small),
           Text(
-            'GIMAR',
+            'AHUMADOS GIMAR SLU',
             style: TextStyle(
               color: AppColors.lightText,
               fontSize: isMobile

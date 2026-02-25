@@ -289,7 +289,8 @@ class AppTextStyles {
 
   // Estilos de branding
   static TextStyle brandTitle(bool isMobile) => TextStyle(
-    fontSize: isMobile ? 28.0 : 48.0,
+    //fontSize: isMobile ? 28.0 : 48.0,
+    fontSize: isMobile ? 35.0 : 56.0,
     fontWeight: AppFontWeights.bold,
     color: AppColors.primary,
     letterSpacing: AppLetterSpacing.tight,
@@ -297,7 +298,8 @@ class AppTextStyles {
   );
 
   static TextStyle brandSubtitle(bool isMobile) => TextStyle(
-    fontSize: isMobile ? 12.0 : 18.0,
+    //fontSize: isMobile ? 12.0 : 18.0,
+    fontSize: isMobile ? 18.0 : 26.0,
     fontWeight: AppFontWeights.regular,
     color: AppColors.text,
     letterSpacing: AppLetterSpacing.wider,
@@ -305,7 +307,8 @@ class AppTextStyles {
   );
 
   static TextStyle sectionTitle(bool isMobile) => TextStyle(
-    fontSize: isMobile ? 18.0 : 24.0,
+    //fontSize: isMobile ? 18.0 : 24.0,
+    fontSize: isMobile ? 26.0 : 32.0,
     fontWeight: AppFontWeights.semiBold,
     color: AppColors.primary,
     fontFamily: 'Inter',
@@ -483,8 +486,10 @@ class AppBarConstants {
   static const double userInfoSpacing = 24.0;
 
   // Help overlay content
-  static const double integrationIconSize = 24.0;
-  static const double helpContentFontSize = 13.0;
+  // static const double integrationIconSize = 24.0;
+  // static const double helpContentFontSize = 13.0;
+  static const double integrationIconSize = 45.0;
+  static const double helpContentFontSize = 18.0;
 
   static const double mobileHeight = 80.0; // Nueva constante
   static const double mobileUserIconSize = 20.0; // Nueva constante

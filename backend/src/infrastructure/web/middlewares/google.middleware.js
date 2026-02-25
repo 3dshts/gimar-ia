@@ -1,9 +1,7 @@
 // backend/src/infrastructure/web/middlewares/google.middleware.js
 import { OAuth2Client } from "google-auth-library";
 import { PassThrough } from "stream";
-import dotenv from "dotenv";
-
-dotenv.config();
+import config from "../../../config/env.js";
 
 async function streamToBuffer(stream) {
   const chunks = [];
@@ -14,7 +12,7 @@ async function streamToBuffer(stream) {
 }
 
 function readTokensFromEnv() {
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+  const refreshToken = config.google.refreshToken;
   if (!refreshToken)
     throw new Error("❌ Falta GOOGLE_REFRESH_TOKEN en variables de entorno");
   return { refresh_token: refreshToken };
@@ -22,9 +20,9 @@ function readTokensFromEnv() {
 
 function generateGoogleClient() {
   const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    config.google.clientId,
+    config.google.clientSecret,
+    config.google.redirectUri,
   );
 
   client.setCredentials(readTokensFromEnv());

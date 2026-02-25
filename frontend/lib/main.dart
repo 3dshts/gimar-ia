@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'IntegrIA - Susy Shoes',
+      title: 'IntegrIA - Ahumados Gimar SLU',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       // Agregar soporte de localizaciones

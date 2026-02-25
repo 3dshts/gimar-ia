@@ -1,51 +1,56 @@
-// backend/src/infrastructure/web/middlewares/auth.middleware.js
-import jwt from "jsonwebtoken";
+// src/infrastructure/web/middlewares/auth.middleware.js
+// -----------------------------------------------------------------------------
+// Middleware de autenticación JWT.
+// Verifica el token del header Authorization y adjunta el payload en req.user.
+// Usa la configuración centralizada en vez de leer process.env directamente.
+// -----------------------------------------------------------------------------
+
+import jwt from 'jsonwebtoken';
+import config from '../../../config/env.js';
 
 /**
- * Middleware de autenticación.
- * - Busca y valida el token JWT en el header `Authorization`.
- * - Si el token es válido, adjunta el payload decodificado en `req.user`.
- * - Si no es válido o no existe, responde con 401.
- * 
- * @param {import('express').Request} req Objeto de la petición
- * @param {import('express').Response} res Objeto de la respuesta
- * @param {import('express').NextFunction} next Función para pasar al siguiente middleware/controlador
+ * Middleware que valida el token JWT en cada petición protegida.
+ * - Extrae el token del header "Authorization: Bearer <token>".
+ * - Verifica firma y expiración con el secreto de config.
+ * - Si es válido, adjunta el payload decodificado en req.user.
+ * - Si no es válido, responde con 401.
  */
 export const authMiddleware = (req, res, next) => {
   try {
-    // 1. Buscamos el token en el encabezado 'Authorization'.
-    const authHeader = req.headers["authorization"];
+    // Leer el header Authorization
+    const authHeader = req.headers['authorization'];
 
-    // 2. Comprobamos si el token fue enviado y si tiene el formato correcto "Bearer <token>".
+    // Verificar que el header existe
     if (!authHeader) {
-      return res
-        .status(401)
-        .json({
-          message: "Acceso denegado. No se proporcionó token de auteticación.",
-        });
-    }
-    if (!authHeader.startsWith("Bearer ")) {
-      return res
-        .status(401)
-        .json({
-          message: "Acceso denegado. El token tiene un formato incorrecto.",
-        });
+      return res.status(401).json({
+        success: false,
+        message: 'Acceso denegado. No se proporcionó token de autenticación.',
+      });
     }
 
-    // 3. Extraemos el token, quitando el prefijo "Bearer ".
-    const token = authHeader.split(" ")[1];
+    // Verificar que tiene el formato correcto "Bearer <token>"
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Acceso denegado. El token tiene un formato incorrecto.',
+      });
+    }
 
-    // 4. Verificamos el token con la clave secreta.
-    // jwt.verify valida la firma y la expiración; lanza error si algo falla.
-    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    // Extraer el token quitando el prefijo "Bearer "
+    const token = authHeader.split(' ')[1];
 
-    // 5. Si el token es válido, adjuntamos el payload al request.
+    // Verificar la firma y expiración del token
+    const decodedPayload = jwt.verify(token, config.jwt.secret);
+
+    // Adjuntar el payload al request para que los controladores lo usen
     req.user = decodedPayload;
 
-    // 6. Continuamos hacia el siguiente middleware/controlador.
+    // Continuar al siguiente middleware o controlador
     next();
   } catch (error) {
-    // Si el token no es válido, devolvemos error 401.
-    res.status(401).json({ message: "Token no válido o ha expirado." });
+    return res.status(401).json({
+      success: false,
+      message: 'Token no válido o ha expirado.',
+    });
   }
 };
