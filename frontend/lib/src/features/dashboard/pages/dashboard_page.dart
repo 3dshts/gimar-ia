@@ -34,6 +34,11 @@ class DashboardPage extends StatelessWidget {
       'title': 'BUZÓN',
       'icon': 'buzon.svg',
     },
+    {
+      'id': 'prueba_web',
+      'title': 'PRUEBA WEB',
+      'icon': 'prueba_web.svg',
+    },
   ];
 
   /// Construye la lista de tarjetas según los permisos del usuario.

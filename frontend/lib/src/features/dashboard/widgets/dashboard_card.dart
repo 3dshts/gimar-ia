@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/src/features/alertas_produccion/pages/alertas_produccion_page.dart';
 import 'package:frontend/src/features/buzon/pages/buzon_page.dart'; 
+import 'package:frontend/src/features/prueba_web/pages/prueba_web_page.dart'; 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/common_widgets/helpers/responsive_helper.dart';
 import '../../../core/network/api_logger.dart';
@@ -54,6 +55,7 @@ class _DashboardCardState extends State<DashboardCard> {
   static final Map<String, Widget Function()> _routes = {
     'alertas_produccion': () => const AlertasProduccionPage(),
     'buzon': () => const BuzonPage(),
+    'prueba_web': () => const PruebaWebPage(), 
   };
 
   /// Maneja la navegación según el ID de la tarjeta.
