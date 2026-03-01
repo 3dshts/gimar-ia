@@ -42,45 +42,41 @@ class _IconAssets {
 
 /// Opciones de Sección.
 class _SeccionOptions {
-  static const String aparado = 'APARADO';
-  static const String mecanica = 'MECÁNICA';
-  static const String almacen = 'ALMACÉN';
-  static const String pieles = 'PIELES';
-  static const String preparado = 'PREPARADO';
-  static const String oficina = 'OFICINA';
+  static const String recepcion = 'RECEPCIÓN';
+  static const String salazon = 'SALAZÓN';
+  static const String ahumado = 'AHUMADO';
+  static const String envasado = 'ENCASADO';
+  static const String camara_frigorifica = 'CAMARA FRIGORÍFICA';
+  static const String control_calidad = 'CONTROL DE CALIDAD';
 
   static const List<String> all = [
-    aparado,
-    mecanica,
-    almacen,
-    pieles,
-    preparado,
-    oficina,
+    recepcion,
+    salazon,
+    ahumado,
+    envasado,
+    camara_frigorifica,
+    control_calidad,
   ];
 }
 
-/// Opciones de Cliente.
+/// Opciones de Proveedor.
 class _ProveedorOptions {
   static const String ninguno = 'NINGUNO';
-  static const String intracuer = 'INTRACUER';
-  static const String eldaplant = 'ELDAPLANT';
-  static const String plantillasHernandez = 'PLANTILLAS HERNÁNDEZ';
-  static const String prefabricadosContinental = 'PREFABRICADOS CONTINENTAL';
-  static const String reecor = 'REECOR PLANTAS MOLDEADAS';
-  static const String revecurt = 'REVECURT';
-  static const String suelasLaura = 'SUELAS LAURA';
-  static const String tecnotac = 'TECNOTAC';
+  static const String atlanticaPescados = 'ATLÁNTICA DE PESCADOS';
+  static const String noruegaSalmon = 'NORUEGA SALMON AS';
+  static const String envasesPlasticos = 'ENVASES PLÁSTICOS LEVANTE';
+  static const String salineraEspanola = 'SALINERA ESPAÑOLA';
+  static const String maderasIbericas = 'MADERAS IBÉRICAS';
+  static const String frigorificosMed = 'FRIGORÍFICOS DEL MED';
 
   static const List<String> all = [
     ninguno,
-    intracuer,
-    eldaplant,
-    plantillasHernandez,
-    prefabricadosContinental,
-    reecor,
-    revecurt,
-    suelasLaura,
-    tecnotac,
+    atlanticaPescados,
+    noruegaSalmon,
+    envasesPlasticos,
+    salineraEspanola,
+    maderasIbericas,
+    frigorificosMed,
   ];
 }
 

@@ -35,9 +35,29 @@ class DashboardPage extends StatelessWidget {
       'icon': 'buzon.svg',
     },
     {
-      'id': 'prueba_web',
-      'title': 'PRUEBA WEB',
-      'icon': 'prueba_web.svg',
+      'id': 'control_visitas',
+      'title': 'CONTROL VISITAS',
+      'icon': 'control_visitas.svg',
+    },
+    {
+      'id': 'inventario',
+      'title': 'INVENTARIO',
+      'icon': 'inventario.svg',
+    },
+    {
+      'id': 'intrastat',
+      'title': 'INTRASTAT',
+      'icon': 'intrastat.svg',
+    },
+    {
+      'id': 'parte_situacion',
+      'title': 'PARTE SITUACIÓN',
+      'icon': 'parte_situacion.svg',
+    },
+    {
+      'id': 'gestion_nominas',
+      'title': 'GESTIÓN NÓMINAS',
+      'icon': 'gestor_nominas.svg',
     },
   ];
 

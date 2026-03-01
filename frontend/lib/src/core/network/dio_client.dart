@@ -8,8 +8,11 @@ import './api_config.dart';
 import './api_logger.dart';
 import './file_upload_helper.dart';
 
+/// Tamaño máximo por lote de archivos (8 MB).
+const int _maxBatchSizeBytes = 4 * 1024 * 1024;
+
 /// Cliente HTTP centralizado para todas las peticiones de la API.
-/// 
+///
 /// Configurado con:
 /// - Autenticación JWT automática mediante interceptor
 /// - Timeouts configurados según el entorno
@@ -27,13 +30,14 @@ class DioClient {
     ApiLogger.logEnvironmentInfo();
 
     return Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: Duration.zero,
-        receiveTimeout: Duration.zero,
-        sendTimeout: Duration.zero,
-      ),
-    )..interceptors.add(
+        BaseOptions(
+          baseUrl: ApiConfig.baseUrl,
+          connectTimeout: Duration.zero,
+          receiveTimeout: Duration.zero,
+          sendTimeout: Duration.zero,
+        ),
+      )
+      ..interceptors.add(
         QueuedInterceptorsWrapper(
           onRequest: _onRequest,
           onResponse: _onResponse,
@@ -71,10 +75,7 @@ class DioClient {
   }
 
   /// Interceptor: Se ejecuta cuando ocurre un error.
-  static void _onError(
-    DioException error,
-    ErrorInterceptorHandler handler,
-  ) {
+  static void _onError(DioException error, ErrorInterceptorHandler handler) {
     ApiLogger.requestError(
       error.requestOptions.path,
       error,
@@ -110,10 +111,7 @@ class DioClient {
   }
 
   /// Obtiene los logs del sistema con paginación.
-  static Future<Response> getAllLogs({
-    int page = 1,
-    int limit = 20,
-  }) async {
+  static Future<Response> getAllLogs({int page = 1, int limit = 20}) async {
     ApiLogger.info('Fetching logs: page=$page, limit=$limit', 'ADMIN');
     return _dio.get(
       ApiEndpoints.getAllLogs,
@@ -152,7 +150,7 @@ class DioClient {
     }
   }
 
-  /// Sube un archivo Excel de prototipo a Google Drive.
+  /// Sube un archivo Excel de prototipo como binario.
   static Future<Response> uploadPrototypeExcel({
     required PlatformFile file,
     required String marca,
@@ -162,10 +160,7 @@ class DioClient {
       ApiLogger.uploadStart(file.name, ApiEndpoints.uploadPrototypeExcel);
 
       // Validar que sea Excel
-      FileUploadHelper.validateExtensions(
-        [file],
-        ['xlsx', 'xls', 'xlsm'],
-      );
+      FileUploadHelper.validateExtensions([file], ['xlsx', 'xls', 'xlsm']);
 
       final formData = await FileUploadHelper.createFormDataSingleFile(
         file: file,
@@ -173,6 +168,7 @@ class DioClient {
         additionalFields: {'marca': marca},
       );
 
+      // Hacer POST con los bytes
       final response = await _dio.post(
         ApiEndpoints.uploadPrototypeExcel,
         data: formData,
@@ -241,7 +237,7 @@ class DioClient {
       ApiLogger.debug('Año: $anio, Mes: $mes', 'UPLOAD');
       ApiLogger.debug(
         'Resumen: 1, Detalle1: ${archivosDetalle1.length}, '
-        'Detalle2: ${archivosDetalle2.length}',
+            'Detalle2: ${archivosDetalle2.length}',
         'UPLOAD',
       );
 
@@ -251,10 +247,7 @@ class DioClient {
           'archivosDetalle1': archivosDetalle1,
           'archivosDetalle2': archivosDetalle2,
         },
-        additionalFields: {
-          'anio': anio,
-          'mes': mes,
-        },
+        additionalFields: {'anio': anio, 'mes': mes},
       );
 
       final response = await _dio.post(
@@ -306,22 +299,46 @@ class DioClient {
     }
   }
 
-  /// Sube múltiples archivos PDF de Intrastat a Google Drive.
-  static Future<Response> uploadInventarioPdfs({
+  /// Sube múltiples archivos PDF de Inventario a Google Drive.
+  /// Divide automáticamente en lotes de máximo 4 MB.
+  static Future<Map<String, dynamic>> uploadInventarioPdfs({
     required List<PlatformFile> files,
-    ProgressCallback? onSendProgress,
+    void Function(int sent, int total)? onSendProgress,
+    void Function(int completados, int total)? onBatchProgress,
   }) async {
-    try {
-      ApiLogger.uploadStart(
-        'Intrastat: ${files.length} PDFs',
-        ApiEndpoints.uploadIntrastatPdf,
+    // Validar que todos sean PDF
+    FileUploadHelper.validateExtensions(files, ['pdf']);
+
+    // Validar que ningún archivo individual supere el límite
+    final archivosGrandes = files
+        .where((f) => (f.size) > _maxBatchSizeBytes)
+        .toList();
+    if (archivosGrandes.isNotEmpty) {
+      final nombres = archivosGrandes.map((f) => f.name).join(', ');
+      throw Exception('Archivos superan 8 MB: $nombres');
+    }
+
+    // Dividir en lotes
+    final lotes = _dividirEnLotes(files);
+    ApiLogger.info('Dividido en ${lotes.length} lote(s)', 'UPLOAD');
+
+    // Acumuladores de resultados
+    final todosExitosos = <Map<String, dynamic>>[];
+    final todosFallidos = <Map<String, dynamic>>[];
+
+    int archivosEnviados = 0;
+    final totalArchivos = files.length;
+
+    // Enviar cada lote secuencialmente
+    for (int i = 0; i < lotes.length; i++) {
+      final lote = lotes[i];
+      ApiLogger.info(
+        'Enviando lote ${i + 1}/${lotes.length}: ${lote.length} archivo(s)',
+        'UPLOAD',
       );
 
-      // Validar que todos sean PDF
-      FileUploadHelper.validateExtensions(files, ['pdf']);
-
       final formData = await FileUploadHelper.createFormDataMultipleFiles(
-        files: files,
+        files: lote,
         fieldName: 'files',
       );
 
@@ -331,15 +348,49 @@ class DioClient {
         onSendProgress: onSendProgress,
       );
 
-      ApiLogger.uploadSuccess('Intrastat PDFs', response.statusCode ?? 0);
-      return response;
-    } catch (e) {
-      ApiLogger.uploadError('Intrastat PDFs', e);
-      rethrow;
+      // Acumular resultados
+      final data = response.data as Map<String, dynamic>;
+      final exitosos = data['exitosos'] as List? ?? [];
+      final fallidos = data['fallidos'] as List? ?? [];
+
+      todosExitosos.addAll(exitosos.cast<Map<String, dynamic>>());
+      todosFallidos.addAll(fallidos.cast<Map<String, dynamic>>());
+
+      archivosEnviados += lote.length;
+      onBatchProgress?.call(archivosEnviados, totalArchivos);
     }
+
+    return {'exitosos': todosExitosos, 'fallidos': todosFallidos};
   }
 
-    /// Sube 4 archivos para Situación de Pedidos Versace a Google Drive.
+  /// Divide archivos en lotes que no superen el límite de tamaño.
+  static List<List<PlatformFile>> _dividirEnLotes(List<PlatformFile> files) {
+    final lotes = <List<PlatformFile>>[];
+    var loteActual = <PlatformFile>[];
+    var tamanoActual = 0;
+
+    for (final file in files) {
+      final tamanoArchivo = file.size;
+
+      if (tamanoActual + tamanoArchivo > _maxBatchSizeBytes &&
+          loteActual.isNotEmpty) {
+        lotes.add(loteActual);
+        loteActual = [];
+        tamanoActual = 0;
+      }
+
+      loteActual.add(file);
+      tamanoActual += tamanoArchivo;
+    }
+
+    if (loteActual.isNotEmpty) {
+      lotes.add(loteActual);
+    }
+
+    return lotes;
+  }
+
+  /// Sube 4 archivos para Situación de Pedidos Versace a Google Drive.
   /// - 1 PDF: Informe Fechas
   /// - 3 Excel: DIRMA, Informe Pasado, Informe Nuevo
   static Future<Response> uploadExcelSituacionVersace({
@@ -385,10 +436,7 @@ class DioClient {
       formData.files.add(
         MapEntry(
           'dirma',
-          MultipartFile.fromBytes(
-            dirma.bytes!,
-            filename: dirma.name,
-          ),
+          MultipartFile.fromBytes(dirma.bytes!, filename: dirma.name),
         ),
       );
 
@@ -460,10 +508,7 @@ class DioClient {
         formData.files.add(
           MapEntry(
             'erpSusy',
-            MultipartFile.fromBytes(
-              pdf.bytes!,
-              filename: pdf.name,
-            ),
+            MultipartFile.fromBytes(pdf.bytes!, filename: pdf.name),
           ),
         );
       }
@@ -493,7 +538,6 @@ class DioClient {
     }
   }
 
-
   // ============================================
   // Métodos de APIs Externas
   // ============================================
@@ -510,7 +554,7 @@ class DioClient {
       'Fetching notas producción: $fechaDesde - $fechaHasta, Sección: $seccion, Temporada: $temporada',
       'EXTERNAL_API',
     );
-    
+
     return _dio.post(
       ApiEndpoints.getNotasProduccion,
       data: {
@@ -521,7 +565,6 @@ class DioClient {
       },
     );
   }
-
 
   // ============================================
   // Métodos de Google Calendar
@@ -539,10 +582,7 @@ class DioClient {
 
     return _dio.get(
       ApiEndpoints.getCalendarComments,
-      queryParameters: {
-        'startDate': startDate,
-        'endDate': endDate,
-      },
+      queryParameters: {'startDate': startDate, 'endDate': endDate},
     );
   }
 
@@ -554,10 +594,7 @@ class DioClient {
     required String autorId,
     required String autorNombre,
   }) async {
-    ApiLogger.info(
-      'Creating calendar comment: $titulo on $fecha',
-      'CALENDAR',
-    );
+    ApiLogger.info('Creating calendar comment: $titulo on $fecha', 'CALENDAR');
 
     return _dio.post(
       ApiEndpoints.createCalendarComment,
@@ -577,17 +614,11 @@ class DioClient {
     required String titulo,
     required String comentario,
   }) async {
-    ApiLogger.info(
-      'Updating calendar comment: $eventId',
-      'CALENDAR',
-    );
+    ApiLogger.info('Updating calendar comment: $eventId', 'CALENDAR');
 
     return _dio.put(
       ApiEndpoints.updateCalendarComment(eventId),
-      data: {
-        'titulo': titulo,
-        'comentario': comentario,
-      },
+      data: {'titulo': titulo, 'comentario': comentario},
     );
   }
 
@@ -595,13 +626,8 @@ class DioClient {
   static Future<Response> deleteCalendarComment({
     required String eventId,
   }) async {
-    ApiLogger.info(
-      'Deleting calendar comment: $eventId',
-      'CALENDAR',
-    );
+    ApiLogger.info('Deleting calendar comment: $eventId', 'CALENDAR');
 
-    return _dio.delete(
-      ApiEndpoints.deleteCalendarComment(eventId),
-    );
+    return _dio.delete(ApiEndpoints.deleteCalendarComment(eventId));
   }
 }
