@@ -7,7 +7,6 @@ import '../../../core/common_widgets/custom_app_bar.dart';
 import '../../../core/common_widgets/common_multiline_text_field.dart';
 import '../../../core/common_widgets/decorative_corner_icon.dart';
 import '../../../core/common_widgets/primary_button.dart';
-import '../../../core/common_widgets/floating_back_button.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/network/json_sender.dart';
 import '../../../core/user/user_cubit.dart';
@@ -20,7 +19,7 @@ import '../../../core/user/user_state.dart';
 /// Endpoints externos de la aplicación.
 class _BuzonEndpoints {
   static const String makeWebhook =
-      'https://hook.eu2.make.com/esibxbllkdy4bitfpz6c3yhg42ogcn8e';
+      'https://hook.eu1.make.com/w3lsr3rc64npof5yaiabxwuupgc65b6i';
 }
 
 /// Claves de campos del formulario.
@@ -115,7 +114,6 @@ class BuzonPage extends StatelessWidget {
                 ),
               ),
             ),
-            const FloatingBackButton(),
           ],
         ),
       ),

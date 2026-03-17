@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import '../../../core/common_widgets/custom_app_bar.dart';
-import '../../../core/common_widgets/floating_back_button.dart';
 import '../../../core/theme/app_theme.dart';
 
 // ============================================
@@ -175,7 +174,6 @@ class DatasheetPage extends StatelessWidget {
               ),
             ),
           ),
-          const FloatingBackButton(),
         ],
       ),
     );

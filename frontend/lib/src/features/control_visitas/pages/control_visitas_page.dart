@@ -1,6 +1,5 @@
 // frontend/lib/src/features/prueba_web/pages/prueba_web_page.dart
 
-import 'dart:math';
 import 'dart:ui_web' as ui;
 import 'package:frontend/src/core/network/api_logger.dart';
 import 'package:web/web.dart' as web;
@@ -8,7 +7,6 @@ import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/common_widgets/custom_app_bar.dart';
-import '../../../core/common_widgets/floating_back_button.dart';
 import '../../../core/user/user_cubit.dart';
 import '../../../core/user/user_state.dart';
 
@@ -97,6 +95,12 @@ class _ControlVisitasPageState extends State<ControlVisitasPage> {
     }
 
     ApiLogger.info('Building URL for ControlVisitas with params: $queryParams', 'CONTROL_VISITAS');
+
+    ApiLogger.info(Uri.https(
+      'meet-register.lovable.app',
+      '/',
+      queryParams,
+    ).toString(), 'CONTROL_VISITAS');
     // Uri.https construye y encodea la URL correctamente
     return Uri.https(
       'meet-register.lovable.app',
@@ -133,8 +137,6 @@ class _ControlVisitasPageState extends State<ControlVisitasPage> {
         children: [
           // El iframe ocupa todo el espacio del body bajo el AppBar.
           const _IFrameContainer(),
-          // El botón de retroceso flota sobre el iframe.
-          const FloatingBackButton(),
         ],
       ),
     );

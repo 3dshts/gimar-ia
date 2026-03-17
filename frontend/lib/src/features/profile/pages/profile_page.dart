@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/common_widgets/custom_app_bar.dart';
-import '../../../core/common_widgets/floating_back_button.dart';
 import '../../../core/common_widgets/admin_toggle_slider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/user/user_cubit.dart';
@@ -120,7 +119,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 );
               },
             ),
-            const FloatingBackButton(),
           ],
         ),
       ),

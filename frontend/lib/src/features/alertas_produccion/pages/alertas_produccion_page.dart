@@ -15,7 +15,6 @@ import '../../../core/common_widgets/decorative_corner_icon.dart';
 import '../../../core/common_widgets/single_file_picker.dart';
 import '../../../core/common_widgets/primary_button.dart';
 import '../../../core/common_widgets/common_text_field.dart';
-import '../../../core/common_widgets/floating_back_button.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/network/json_sender.dart';
 import '../../../core/user/user_cubit.dart';
@@ -166,7 +165,6 @@ class AlertasProduccionPage extends StatelessWidget {
                 ),
               ),
             ),
-            const FloatingBackButton(),
           ],
         ),
       ),

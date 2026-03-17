@@ -29,6 +29,10 @@ app.use('/', mainRoutes);
 
 export default app;
 
+//#######################################################################################//
+// DESCOMENTAR ESTAS LÍNEAS PARA EJECUTAR EL SERVIDOR LOCALMENTE (NO USAR EN AWS LAMBDA) //
+//#######################################################################################//
+
 const PORT = process.env.PORT || 3000;
 
 // Inicia el servidor y lo pone a escuchar en el puerto configurado.

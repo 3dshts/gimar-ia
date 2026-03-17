@@ -40,25 +40,25 @@ class DashboardPage extends StatelessWidget {
       'icon': 'control_visitas.svg',
     },
     {
-      'id': 'inventario',
-      'title': 'INVENTARIO',
-      'icon': 'inventario.svg',
+      'id': 'cae',
+      'title': 'CAE',
+      'icon': 'cae.svg',
     },
     {
-      'id': 'intrastat',
-      'title': 'INTRASTAT',
-      'icon': 'intrastat.svg',
+      'id': 'cpd',
+      'title': 'CPD',
+      'icon': 'cpd.svg',
     },
     {
-      'id': 'parte_situacion',
-      'title': 'PARTE SITUACIÓN',
-      'icon': 'parte_situacion.svg',
+      'id': 'terminal',
+      'title': 'TERMINAL',
+      'icon': 'terminal.svg',
     },
     {
-      'id': 'gestion_nominas',
-      'title': 'GESTIÓN NÓMINAS',
-      'icon': 'gestor_nominas.svg',
-    },
+      'id': 'visitas',
+      'title': 'VISITAS',
+      'icon': 'control_visitas.svg',
+    }
   ];
 
   /// Construye la lista de tarjetas según los permisos del usuario.

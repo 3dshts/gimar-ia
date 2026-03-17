@@ -7,7 +7,7 @@ class ApiConfig {
   /// Entorno actual de la aplicación.
   /// 
   /// Cambia este valor para alternar entre desarrollo y producción.
-  static const Environment currentEnvironment = Environment.dev;
+  static const Environment currentEnvironment = Environment.prod;
 
   /// URL base según el entorno configurado.
   static String get baseUrl {
@@ -24,7 +24,7 @@ class ApiConfig {
 
   /// URL de producción (AWS Lambda).
   static const String _prodBaseUrl =
-      'https://xg7e6zon8f.execute-api.eu-central-1.amazonaws.com';
+      'https://r2kw4yqdlk.execute-api.eu-central-1.amazonaws.com/';
 
   /// Indica si estamos en modo debug (desarrollo).
   static bool get isDebug => currentEnvironment == Environment.dev;
