@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/src/features/alertas_produccion/pages/alertas_produccion_page.dart';
 import 'package:frontend/src/features/buzon/pages/buzon_page.dart'; 
-import 'package:frontend/src/features/control_visitas/pages/control_visitas_page.dart'; 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/common_widgets/helpers/responsive_helper.dart';
 import '../../../core/network/api_logger.dart';
@@ -59,7 +58,6 @@ class _DashboardCardState extends State<DashboardCard> {
   static final Map<String, Widget Function()> _routes = {
     'alertas_produccion': () => const AlertasProduccionPage(),
     'buzon': () => const BuzonPage(),
-    'control_visitas': () => const ControlVisitasPage(),
     'cpd': () => const CPDPage(),
     'cae': () => const CAEPage(),
     'terminal': () => const TerminalPage(),

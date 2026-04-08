@@ -14,7 +14,7 @@ import '../../../core/common_widgets/custom_app_bar.dart';
 /// Configuración del módulo CAE.
 class _CAEConfig {
   static const String baseUrl = 'https://genesis-emp.lovable.app';
-  static const String viewType = 'prueba-web-iframe';
+  static const String viewType = 'cae-web-iframe';
 }
 
 /// Estilos CSS aplicados directamente al IFrameElement.

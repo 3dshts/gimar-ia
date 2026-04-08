@@ -35,11 +35,6 @@ class DashboardPage extends StatelessWidget {
       'icon': 'buzon.svg',
     },
     {
-      'id': 'control_visitas',
-      'title': 'CONTROL VISITAS',
-      'icon': 'control_visitas.svg',
-    },
-    {
       'id': 'cae',
       'title': 'CAE',
       'icon': 'cae.svg',

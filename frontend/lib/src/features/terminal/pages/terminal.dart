@@ -14,7 +14,7 @@ import '../../../core/common_widgets/custom_app_bar.dart';
 /// Configuración del módulo Terminal.
 class _TerminalConfig {
   static const String baseUrl = 'https://terminales-gimar.lovable.app';
-  static const String viewType = 'prueba-web-iframe';
+  static const String viewType = 'terminal-web-iframe';
 }
 
 /// Estilos CSS aplicados directamente al IFrameElement.

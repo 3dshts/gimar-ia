@@ -34,18 +34,17 @@ class _ImageCompressionConfig {
 
 /// Endpoints externos de la aplicación.
 class _AlertasEndpoints {
-  static const String makeWebhook =
-      'https://hook.eu2.make.com/mg7de7k98iyju6xvwanuwik8eurusrs6';
+  static const String makeWebhook = 'https://hook.eu1.make.com/ex28iqyjnkvrg6n7qckq7iroc4g55i7v';
 }
 
 /// Secciones disponibles para alertas de producción.
 class _Secciones {
   static const List<String> all = [
-    'Aparado',
-    'Cortado',
-    'Montado',
-    'Envasa',
-    'Almacén',
+    'PRODUCCIÓN',
+    'ADMINISTRACIÓN',
+    'CALIDAD',
+    'COMERCIAL',
+    'DESARROLLO',
   ];
 }
 
@@ -58,8 +57,6 @@ class _ImageExtensions {
 class _FormFields {
   static const String seccion = 'seccion';
   static const String descripcion = 'descripcion';
-  static const String pedido = 'pedido';
-  static const String modelo = 'modelo';
   static const String operario = 'operario';
   static const String imagen = 'imagen';
 }
@@ -69,8 +66,6 @@ class _FieldLabels {
   static const Map<String, String> map = {
     _FormFields.seccion: 'Sección',
     _FormFields.descripcion: 'Descripción',
-    _FormFields.pedido: 'Pedido',
-    _FormFields.modelo: 'Modelo',
     _FormFields.operario: 'Operario',
     _FormFields.imagen: 'Fotografía',
   };
@@ -97,8 +92,6 @@ class _StatusMessages {
 class _ValidationMessages {
   static const String seccionRequired = 'Selecciona una sección.';
   static const String descripcionRequired = 'La descripción es obligatoria.';
-  static const String pedidoRequired = 'El número de pedido es obligatorio.';
-  static const String modeloRequired = 'El modelo es obligatorio.';
   static const String operarioRequired =
       'El nombre del operario es obligatorio.';
 
@@ -186,8 +179,6 @@ class _AlertasForm extends StatefulWidget {
 class _AlertasFormState extends State<_AlertasForm> {
   // Controladores
   final _descripcionController = TextEditingController();
-  final _pedidoController = TextEditingController();
-  final _modeloController = TextEditingController();
   final _operarioController = TextEditingController();
 
   // Estado del formulario
@@ -204,8 +195,6 @@ class _AlertasFormState extends State<_AlertasForm> {
   @override
   void dispose() {
     _descripcionController.dispose();
-    _pedidoController.dispose();
-    _modeloController.dispose();
     _operarioController.dispose();
     super.dispose();
   }
@@ -223,12 +212,6 @@ class _AlertasFormState extends State<_AlertasForm> {
     if (_descripcionController.text.trim().isEmpty) {
       errors[_FormFields.descripcion] =
           _ValidationMessages.descripcionRequired;
-    }
-    if (_pedidoController.text.trim().isEmpty) {
-      errors[_FormFields.pedido] = _ValidationMessages.pedidoRequired;
-    }
-    if (_modeloController.text.trim().isEmpty) {
-      errors[_FormFields.modelo] = _ValidationMessages.modeloRequired;
     }
     if (_operarioController.text.trim().isEmpty) {
       errors[_FormFields.operario] = _ValidationMessages.operarioRequired;
@@ -378,8 +361,6 @@ class _AlertasFormState extends State<_AlertasForm> {
         'date': DateTime.now().toIso8601String(),
         'section': _seccion,
         'alert_description': _descripcionController.text.trim(),
-        'pedido': _pedidoController.text.trim(),
-        'modelo': _modeloController.text.trim(),
         'operario': _operarioController.text.trim(),
         'driveImage': _buildDriveImageData(driveMeta),
       },
@@ -497,8 +478,6 @@ class _AlertasFormState extends State<_AlertasForm> {
 
   void _clearForm() {
     _descripcionController.clear();
-    _pedidoController.clear();
-    _modeloController.clear();
     _operarioController.clear();
 
     setState(() {
@@ -539,8 +518,6 @@ class _AlertasFormState extends State<_AlertasForm> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < AppBreakpoints.mobile;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -549,8 +526,6 @@ class _AlertasFormState extends State<_AlertasForm> {
         _buildSeccionField(),
         const SizedBox(height: AppSpacing.xl),
         _buildDescripcionField(),
-        const SizedBox(height: AppSpacing.xl),
-        _buildPedidoModeloFields(isMobile),
         const SizedBox(height: AppSpacing.large),
         _buildOperarioField(),
         const SizedBox(height: AppSpacing.xl),
@@ -593,47 +568,6 @@ class _AlertasFormState extends State<_AlertasForm> {
       hintText: 'Describe el problema ocurrido...',
       enabled: !_isSending,
       errorText: _fieldErrors[_FormFields.descripcion],
-    );
-  }
-
-  Widget _buildPedidoModeloFields(bool isMobile) {
-    if (isMobile) {
-      return Column(
-        children: [
-          _buildPedidoField(),
-          const SizedBox(height: AppSpacing.large),
-          _buildModeloField(),
-        ],
-      );
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: _buildPedidoField()),
-        const SizedBox(width: AppSpacing.large),
-        Expanded(child: _buildModeloField()),
-      ],
-    );
-  }
-
-  Widget _buildPedidoField() {
-    return CommonTextField(
-      controller: _pedidoController,
-      label: 'Pedido',
-      hintText: 'Número de pedido afectado',
-      enabled: !_isSending,
-      errorText: _fieldErrors[_FormFields.pedido],
-    );
-  }
-
-  Widget _buildModeloField() {
-    return CommonTextField(
-      controller: _modeloController,
-      label: 'Modelo',
-      hintText: 'Modelo afectado',
-      enabled: !_isSending,
-      errorText: _fieldErrors[_FormFields.modelo],
     );
   }
 

@@ -14,7 +14,7 @@ import '../../../core/common_widgets/custom_app_bar.dart';
 /// Configuración del módulo CPD.
 class _CPDConfig {
   static const String baseUrl = 'https://cpdgimar.lovable.app';
-  static const String viewType = 'prueba-web-iframe';
+  static const String viewType = 'cpd-web-iframe';
 }
 
 /// Estilos CSS aplicados directamente al IFrameElement.

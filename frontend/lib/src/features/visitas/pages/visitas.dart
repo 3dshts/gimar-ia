@@ -13,8 +13,8 @@ import '../../../core/common_widgets/custom_app_bar.dart';
 
 /// Configuración del módulo Visitas.
 class _VisitasConfig {
-  static const String baseUrl = 'https://visitas-gimar.lovable.app';
-  static const String viewType = 'prueba-web-iframe';
+  static const String baseUrl = 'https://portuno.lovable.app/';
+  static const String viewType = 'visitas-web-iframe';
 }
 
 /// Estilos CSS aplicados directamente al IFrameElement.
